@@ -1,6 +1,23 @@
 import React from 'react'
+import { Earth, Pizza, PiIcon } from 'lucide-react';
 
 function Igniter() {
+
+  const suggestions = [
+    { icon: Pizza, label: 'Chose your side', text: 'Pineapple is better then pepperoni on pizza' },
+    { icon: Earth, label: 'Spining Flat', text: 'What if earth is flat and spining like a beyblade' },
+    { icon: PiIcon, label: 'Pi dilemma', text: 'Matematicians are wrong pi must be 4.13' }
+    
+  ];
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'morning';
+    if (hour < 18) return 'afternoon';
+    return 'evening';
+    };
+
+  const greeting = getGreeting();
 
   return (
     <>
@@ -10,7 +27,7 @@ function Igniter() {
             <div className="text-center mb-12">
               <h1 className="text-5xl font-light text-gray-100 mb-2">
                 <span className="text-orange-400 mr-3">✱</span>
-                Good evening, Sinan
+                Good {greeting}, stranger
               </h1>
             </div>
 
@@ -23,6 +40,19 @@ function Igniter() {
                   rows={1}
                 />
               </div>
+            </div>
+
+            {/* Suggestion Buttons */}
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {suggestions.map((suggestion, index) => (
+                <button
+                  key={index}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-zinc-800 hover:bg-zinc-750 border border-zinc-700 rounded-xl transition-colors text-sm text-gray-300"
+                >
+                  <suggestion.icon size={18} className="text-gray-400" />
+                  {suggestion.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>
