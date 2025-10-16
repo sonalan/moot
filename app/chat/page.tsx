@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 
 
@@ -20,7 +21,7 @@ export default function ChatArchive() {
             console.log('Fetched conversations:', data);
             
             // Transform the API response to match our expected format
-            const transformedConversations = data.map((conv: any) => {
+            const transformedConversations = data.map((conv: { conversation_id: string; message: Array<{ role: string; message: string }> }) => {
                 // Get the last message from the conversation
                 const lastMessage = conv.message && conv.message.length > 0 
                     ? conv.message[conv.message.length - 1].message 
@@ -55,17 +56,17 @@ export default function ChatArchive() {
             ) : (
                 conversations.map((conv) => (
                     <li key={conv.conversation_id} className="border bg-gray-200 border-gray-200 rounded-lg p-4 hover:bg-gray-50">
-                        <a href={`/chat/${conv.conversation_id}`} className="block">
+                        <Link href={`/chat/${conv.conversation_id}`} className="block">
                             <div className="font-medium text-gray-900 mb-1">
                                 Chat: {conv.conversation_id}
                             </div>
                             <div className="text-gray-600 text-sm mb-2">
-                                Last message: "{conv.last_message}"
+                                Last message: &ldquo;{conv.last_message}&rdquo;
                             </div>
                             <div className="text-gray-400 text-xs">
                                 Updated: {new Date(conv.updated_at).toLocaleString()}
                             </div>
-                        </a>
+                        </Link>
                     </li>
                 ))
             )}

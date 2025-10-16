@@ -7,8 +7,17 @@ import { POST, GET } from './route'
 // Mock console.error to avoid cluttering test output
 const mockConsoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
 
+// Type definitions for test data
+interface TestConversation {
+  conversation_id: string;
+  message: Array<{
+    role: 'user' | 'bot';
+    message: string;
+  }>;
+}
+
 // Helper function to create a mock NextRequest
-function createMockRequest(method: string, body?: any, searchParams?: Record<string, string>) {
+function createMockRequest(method: string, body?: unknown, searchParams?: Record<string, string>) {
   const url = new URL('http://localhost:3000/api/chat')
   
   if (searchParams) {
@@ -276,14 +285,14 @@ describe('/api/chat', () => {
       const request = createMockRequest('GET')
 
       const response = await GET(request)
-      const data = await response.json()
+      const data = await response.json() as TestConversation[]
 
       expect(response.status).toBe(200)
       expect(Array.isArray(data)).toBe(true)
       expect(data.length).toBeGreaterThanOrEqual(2)
       
       // Check structure of returned conversations
-      data.forEach((conv: any) => {
+      data.forEach((conv: TestConversation) => {
         expect(conv).toHaveProperty('conversation_id')
         expect(conv).toHaveProperty('message')
         expect(Array.isArray(conv.message)).toBe(true)
@@ -330,7 +339,7 @@ describe('/api/chat', () => {
       expect(getAllResponse.status).toBe(200)
       
       // Find our conversation in the results
-      const ourConversation = getAllData.find((conv: any) => conv.conversation_id === conversationId)
+      const ourConversation = getAllData.find((conv: TestConversation) => conv.conversation_id === conversationId)
       expect(ourConversation).toBeDefined()
       expect(ourConversation.message).toHaveLength(5) // Only 5 most recent
     })

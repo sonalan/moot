@@ -1,7 +1,6 @@
 'use client'
 import React, { useState, useRef, useEffect } from 'react';
 import { Earth, Pizza, PiIcon } from 'lucide-react';
-import { send } from 'process';
 
 interface IgniterProps {
   sendMessage: (message: string) => void;

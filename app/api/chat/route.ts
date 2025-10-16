@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get existing conversation or create new one
-    let conversationHistory = conversations.get(conversationId) || [];
+    const conversationHistory = conversations.get(conversationId) || [];
 
     // Add user message
     const userMessage: ChatMessage = {
