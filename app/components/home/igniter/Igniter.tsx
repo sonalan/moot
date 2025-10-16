@@ -1,8 +1,12 @@
 'use client'
 import React, { useState, useRef, useEffect } from 'react';
 import { Earth, Pizza, PiIcon } from 'lucide-react';
+import { send } from 'process';
 
-function Igniter() {
+interface IgniterProps {
+  sendMessage: (message: string) => void;
+}
+function Igniter({sendMessage}: IgniterProps) {
 
   const [input, setInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -24,6 +28,7 @@ function Igniter() {
   const handleSend = () => {
     if (input.trim()) {
       console.log(input)
+      sendMessage(input);
       setInput('');
     }
   };
