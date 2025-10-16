@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Moot | How dare you debate :)",
+  title: "Moot | How dare you try to debate  :)",
   description: "A fun AI chat for debaters",
 };
 
@@ -31,7 +31,7 @@ export default function RootLayout({
           <nav className="flex items-center justify-between px-6 py-4 bg-white shadow">
             <div className="flex items-center gap-2">
               <span className="text-xl font-bold text-gray-900">Moot</span>
-              <span className="text-sm text-gray-500">How dare you debate :)</span>
+              <span className="text-sm text-gray-500">How dare you try to debate :)</span>
             </div>
             <ul className="flex items-center gap-6">
               <li>
