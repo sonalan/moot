@@ -96,18 +96,22 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Optional: Add GET method to retrieve conversation history
+// GET method to retrieve conversation history or all conversations
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const conversationId = searchParams.get('conversation_id');
 
+  // If no conversation_id provided, return all conversation IDs
   if (!conversationId) {
-    return NextResponse.json(
-      { error: 'conversation_id parameter is required' },
-      { status: 400 }
-    );
+    const allConversations = Array.from(conversations.entries()).map(([id, messages]) => ({
+      conversation_id: id,
+      message: messages.slice(-5) // return only the 5 most recent messages
+    }));
+
+    return NextResponse.json(allConversations);
   }
 
+  // Return specific conversation
   const conversationHistory = conversations.get(conversationId);
   
   if (!conversationHistory) {
