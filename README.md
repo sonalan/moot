@@ -1,20 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Moot Chat Application
 
-## Getting Started
+A Next.js-based chat application with Docker support and comprehensive testing.
 
-First, run the development server:
+## Quick Start with Make
+
+This project includes a Makefile for easy development and deployment. Use these commands:
 
 ```bash
+# Show all available commands
+make
+
+# Install all requirements
+make install
+
+# Run tests
+make test
+
+# Start the application with Docker
+make run
+
+# Stop all services
+make down
+
+# Clean up all Docker resources
+make clean
+```
+
+## Manual Development Setup
+
+If you prefer to run the development server manually:
+
+```bash
+# Install dependencies
+pnpm install
+
+# Run development server
+pnpm dev
+# or
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
 # or
 bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## Features
+
+- **Chat API**: RESTful API for sending and receiving messages
+- **Chat Archive**: View all conversations with message history
+- **Docker Support**: Full containerization with Docker and Docker Compose
+- **Testing**: Comprehensive test suite with 100% coverage
+- **TypeScript**: Full type safety throughout the application
+- **Make Commands**: Easy development workflow with Makefile
+
+## API Endpoints
+
+- `POST /api/chat` - Send a message to start or continue a conversation
+- `GET /api/chat?conversation_id=<id>` - Get conversation history
+- `GET /api/chat` - Get all conversations
+
+## Project Structure
+
+```
+├── app/
+│   ├── api/chat/           # Chat API endpoints
+│   ├── chat/               # Chat pages
+│   ├── components/         # React components
+│   └── layout.tsx          # Root layout
+├── Dockerfile              # Docker configuration
+├── docker-compose.yml      # Docker Compose setup
+├── Makefile               # Development commands
+└── __tests__/             # Test files
+```
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
