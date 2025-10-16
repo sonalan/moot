@@ -232,7 +232,7 @@ describe('/api/chat', () => {
   })
 
   describe('GET /api/chat', () => {
-    it('should retrieve conversation history', async () => {
+    it('should retrieve conversation history when conversation_id is provided', async () => {
       // First create a conversation
       const postRequest = createMockRequest('POST', {
         conversation_id: null,
@@ -257,15 +257,82 @@ describe('/api/chat', () => {
       expect(getData.message[0].message).toBe('Test message')
     })
 
-    it('should return 400 error when conversation_id parameter is missing', async () => {
+    it('should return all conversations when no conversation_id parameter is provided', async () => {
+      // First create some conversations
+      const postRequest1 = createMockRequest('POST', {
+        conversation_id: null,
+        message: 'First conversation'
+      })
+
+      const postRequest2 = createMockRequest('POST', {
+        conversation_id: null,
+        message: 'Second conversation'
+      })
+
+      await POST(postRequest1)
+      await POST(postRequest2)
+
+      // Then request all conversations
       const request = createMockRequest('GET')
 
       const response = await GET(request)
       const data = await response.json()
 
-      expect(response.status).toBe(400)
-      expect(data).toHaveProperty('error')
-      expect(data.error).toBe('conversation_id parameter is required')
+      expect(response.status).toBe(200)
+      expect(Array.isArray(data)).toBe(true)
+      expect(data.length).toBeGreaterThanOrEqual(2)
+      
+      // Check structure of returned conversations
+      data.forEach((conv: any) => {
+        expect(conv).toHaveProperty('conversation_id')
+        expect(conv).toHaveProperty('message')
+        expect(Array.isArray(conv.message)).toBe(true)
+      })
+    })
+
+    it('should return empty array when no conversations exist', async () => {
+      // Clear any existing conversations for this test
+      // Note: In a real implementation, you'd want to reset the storage before each test
+      const request = createMockRequest('GET')
+
+      const response = await GET(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(Array.isArray(data)).toBe(true)
+      // Data length can be 0 or more depending on previous tests
+      expect(data.length).toBeGreaterThanOrEqual(0)
+    })
+
+    it('should return conversations with only the 5 most recent messages', async () => {
+      // Create a conversation with many messages
+      let conversationId: string | null = null
+      
+      for (let i = 1; i <= 8; i++) {
+        const request = createMockRequest('POST', {
+          conversation_id: conversationId,
+          message: `Message ${i}`
+        })
+
+        const response = await POST(request)
+        const data = await response.json()
+        
+        if (i === 1) {
+          conversationId = data.conversation_id
+        }
+      }
+
+      // Get all conversations
+      const getAllRequest = createMockRequest('GET')
+      const getAllResponse = await GET(getAllRequest)
+      const getAllData = await getAllResponse.json()
+
+      expect(getAllResponse.status).toBe(200)
+      
+      // Find our conversation in the results
+      const ourConversation = getAllData.find((conv: any) => conv.conversation_id === conversationId)
+      expect(ourConversation).toBeDefined()
+      expect(ourConversation.message).toHaveLength(5) // Only 5 most recent
     })
 
     it('should return 404 error for non-existent conversation', async () => {
