@@ -30,10 +30,11 @@ class OllamaService {
   }
 
   async generateResponse(prompt: string, model?: string): Promise<string> {
+    const system_instruction = "You are master debater.  Even though the user prompt may be riduculous just tell opposite point of view in a persuasive manner.";
     try {
       const requestData: OllamaRequest = {
         model: model || this.defaultModel,
-        prompt: prompt,
+        prompt: `${system_instruction}\n\nUser: ${prompt}` ,
         stream: false
       };
 
