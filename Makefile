@@ -1,7 +1,7 @@
 # Makefile for Moot Chat Application
 # Make sure to use tabs instead of spaces for indentation
 
-.PHONY: help install test run down clean build dev lint logs status restart exec
+.PHONY: help install test run down clean build dev lint logs status restart exec exec-ollama ollama-models ollama-pull ollama-test
 
 # Default target - show help
 help:
@@ -22,6 +22,12 @@ help:
 	@echo "  make status   - Show service status"
 	@echo "  make restart  - Restart all services"
 	@echo "  make exec     - Execute shell in running container"
+	@echo ""
+	@echo "Ollama LLM Commands:"
+	@echo "  make exec-ollama     - Execute shell in ollama container"
+	@echo "  make ollama-models   - List available ollama models"
+	@echo "  make ollama-pull MODEL=name - Pull a specific ollama model"
+	@echo "  make ollama-test     - Test ollama service with a simple query"
 	@echo ""
 
 # Install all requirements
@@ -66,6 +72,9 @@ run: build
 	@echo ""
 	@echo "✅ Services are starting up!"
 	@echo "🌐 Application will be available at: http://localhost:3000"
+	@echo "🤖 Ollama LLM service will be available at: http://localhost:11434"
+	@echo ""
+	@echo "⏳ Note: Ollama service may take a few minutes to download the model on first run"
 	@echo ""
 	@echo "To check status: docker-compose ps"
 	@echo "To view logs: docker-compose logs -f"
@@ -106,6 +115,26 @@ restart: down run
 # Run a one-off command in the app container
 exec:
 	docker-compose exec moot-app /bin/sh
+
+# Execute shell in ollama container
+exec-ollama:
+	docker-compose exec ollama /bin/bash
+
+# Check ollama models
+ollama-models:
+	@echo "📋 Available Ollama models:"
+	docker-compose exec ollama ollama list
+
+# Pull a specific ollama model
+ollama-pull:
+	@echo "📥 Pulling Ollama model: $(MODEL)"
+	@if [ -z "$(MODEL)" ]; then echo "Usage: make ollama-pull MODEL=model-name"; exit 1; fi
+	docker-compose exec ollama ollama pull $(MODEL)
+
+# Test ollama service
+ollama-test:
+	@echo "🧪 Testing Ollama service..."
+	curl -X POST http://localhost:11434/api/generate -d '{"model":"$(shell grep OLLAMA_MODEL .env | cut -d= -f2)","prompt":"Hello, how are you?","stream":false}' -H "Content-Type: application/json"
 
 # Default target
 .DEFAULT_GOAL := help

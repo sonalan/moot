@@ -16,7 +16,7 @@ make install
 # Run tests
 make test
 
-# Start the application with Docker
+# Start the application with Docker (includes Ollama LLM service)
 make run
 
 # Stop all services
@@ -24,6 +24,11 @@ make down
 
 # Clean up all Docker resources
 make clean
+
+# Ollama LLM management
+make ollama-models              # List available models
+make ollama-pull MODEL=llama2   # Pull a specific model
+make ollama-test               # Test the LLM service
 ```
 
 ## Manual Development Setup
@@ -50,6 +55,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 - **Chat API**: RESTful API for sending and receiving messages
 - **Chat Archive**: View all conversations with message history
+- **LLM Integration**: Ollama service with configurable models (default: smol2)
 - **Docker Support**: Full containerization with Docker and Docker Compose
 - **Testing**: Comprehensive test suite with 100% coverage
 - **TypeScript**: Full type safety throughout the application
@@ -61,6 +67,41 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - `GET /api/chat?conversation_id=<id>` - Get conversation history
 - `GET /api/chat` - Get all conversations
 
+## Services
+
+The application consists of two main services:
+
+1. **moot-app**: The main Next.js chat application
+2. **ollama**: LLM service for AI-powered chat responses
+
+## Configuration
+
+The application uses environment variables defined in `.env`:
+
+```env
+# App Configuration
+NODE_ENV=production
+PORT=3000
+
+# LLM Configuration
+OLLAMA_MODEL=llama3.2:1b    # Can be changed to any Ollama-supported model
+OLLAMA_HOST=ollama          # Docker service name
+OLLAMA_PORT=11434           # Ollama service port
+```
+
+### Model Setup
+
+After starting the services, you can:
+
+1. **Pull a specific model**: `make ollama-pull MODEL=llama3.2:1b`
+2. **List available models**: `make ollama-models`
+3. **Test the service**: `make ollama-test`
+
+Popular lightweight models for development:
+- `llama3.2:1b` - Small, fast model (1.3GB)
+- `qwen2:0.5b` - Very small model (352MB)
+- `phi3:mini` - Microsoft's mini model (2.3GB)
+
 ## Project Structure
 
 ```
@@ -69,8 +110,9 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 │   ├── chat/               # Chat pages
 │   ├── components/         # React components
 │   └── layout.tsx          # Root layout
+├── .env                    # Environment variables
 ├── Dockerfile              # Docker configuration
-├── docker-compose.yml      # Docker Compose setup
+├── docker-compose.yml      # Docker Compose setup with Ollama
 ├── Makefile               # Development commands
 └── __tests__/             # Test files
 ```
