@@ -27,7 +27,7 @@ make clean
 
 # Ollama LLM management
 make ollama-models              # List available models
-make ollama-pull MODEL=llama2   # Pull a specific model
+make ollama-pull MODEL=llama3.2:1b   # Pull a specific model
 make ollama-test               # Test the LLM service
 ```
 
