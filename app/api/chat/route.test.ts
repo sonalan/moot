@@ -4,6 +4,61 @@
 import { NextRequest } from 'next/server'
 import { POST, GET } from './route'
 
+// Mock the database and Ollama services
+jest.mock('../../lib/database', () => {
+  const mockMessages = new Map<string, Array<{
+    id: number;
+    conversation_id: string;
+    role: string;
+    message: string;
+    created_at: string;
+  }>>()
+  
+  return {
+    getDatabase: () => ({
+      addMessage: jest.fn((conversationId: string, role: string, message: string) => {
+        if (!mockMessages.has(conversationId)) {
+          mockMessages.set(conversationId, [])
+        }
+        const messages = mockMessages.get(conversationId)!
+        const newMessage = {
+          id: messages.length + 1,
+          conversation_id: conversationId,
+          role,
+          message,
+          created_at: new Date().toISOString()
+        }
+        messages.push(newMessage)
+        return newMessage
+      }),
+      getRecentMessages: jest.fn((conversationId: string, limit: number = 5) => {
+        const messages = mockMessages.get(conversationId) || []
+        return messages.slice(-limit)
+      }),
+      getAllConversations: jest.fn(() => {
+        return Array.from(mockMessages.entries()).map(([id, messages]) => ({
+          conversation_id: id,
+          message: messages.slice(-5)
+        }))
+      }),
+      clearAllData: jest.fn(() => {
+        mockMessages.clear()
+      })
+    }),
+    // Export the mock messages for test access
+    __getMockMessages: () => mockMessages
+  }
+})
+
+jest.mock('../../lib/ollama', () => ({
+  getOllamaService: () => ({
+    generateResponse: jest.fn(async (prompt: string) => {
+      // Return a deterministic response for testing
+      return `Bot response to: "${prompt}"`
+    })
+  })
+}))
+
 // Mock console.error to avoid cluttering test output
 const mockConsoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
 
@@ -11,8 +66,11 @@ const mockConsoleError = jest.spyOn(console, 'error').mockImplementation(() => {
 interface TestConversation {
   conversation_id: string;
   message: Array<{
+    id?: number;
+    conversation_id?: string;
     role: 'user' | 'bot';
     message: string;
+    created_at?: string;
   }>;
 }
 
@@ -37,9 +95,14 @@ function createMockRequest(method: string, body?: unknown, searchParams?: Record
 }
 
 describe('/api/chat', () => {
+  // Get access to the mocked database
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { getDatabase } = require('../../lib/database')
+  const db = getDatabase()
+
   beforeEach(() => {
-    // Clear any existing conversations between tests
-    // Note: In a real implementation, you'd want to reset the storage
+    // Clear database and reset mocks between tests
+    db.clearAllData()
     jest.clearAllMocks()
   })
 
@@ -64,16 +127,22 @@ describe('/api/chat', () => {
       expect(Array.isArray(data.message)).toBe(true)
       expect(data.message).toHaveLength(2) // user message + bot response
       
-      // Check user message
+      // Check user message structure (now includes database fields)
       expect(data.message[0]).toEqual({
+        id: expect.any(Number),
+        conversation_id: data.conversation_id,
         role: 'user',
-        message: 'Hello, world!'
+        message: 'Hello, world!',
+        created_at: expect.any(String)
       })
       
-      // Check bot response
+      // Check bot response structure
       expect(data.message[1]).toEqual({
+        id: expect.any(Number),
+        conversation_id: data.conversation_id,
         role: 'bot',
-        message: expect.stringContaining('Hello, world!')
+        message: 'Bot response to: "Hello, world!"',
+        created_at: expect.any(String)
       })
     })
 
@@ -219,24 +288,18 @@ describe('/api/chat', () => {
       expect(data.message).toHaveLength(2) // New conversation started
     })
 
-    it('should generate different bot responses', async () => {
-      const responses = new Set()
+    it('should generate consistent bot responses', async () => {
+      const request = createMockRequest('POST', {
+        conversation_id: null,
+        message: 'Test message'
+      })
+
+      const response = await POST(request)
+      const data = await response.json()
       
-      // Test multiple requests to see if we get different responses
-      for (let i = 0; i < 10; i++) {
-        const request = createMockRequest('POST', {
-          conversation_id: null,
-          message: 'Test message'
-        })
-
-        const response = await POST(request)
-        const data = await response.json()
-        
-        responses.add(data.message[1].message)
-      }
-
-      // Should have more than one unique response (randomness)
-      expect(responses.size).toBeGreaterThan(1)
+      // Should get a deterministic response from mocked Ollama
+      expect(data.message[1].message).toBe('Bot response to: "Test message"')
+      expect(data.message[1].role).toBe('bot')
     })
   })
 

@@ -7,12 +7,14 @@ services:
       dockerfile: Dockerfile
     ports:
       - '${PORT:-3000}:3000'
+    volumes:
+      - chat-data:/app/data
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=${PORT:-3000}
       - OLLAMA_HOST=${OLLAMA_HOST:-ollama}
       - OLLAMA_PORT=${OLLAMA_PORT:-11434}
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-smollm2}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.2:1b}
     depends_on:
       - ollama
     networks:
@@ -42,7 +44,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 120s
+      start_period: 60s
 
 networks:
   moot-network:
@@ -50,4 +52,6 @@ networks:
 
 volumes:
   ollama-data:
+    driver: local
+  chat-data:
     driver: local

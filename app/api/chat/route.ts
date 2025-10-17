@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getDatabase, ChatMessage } from '../../lib/database';
+import { getOllamaService } from '../../lib/ollama';
 
 // TypeScript interfaces
-interface ChatMessage {
-  role: 'user' | 'bot';
-  message: string;
-}
-
 interface ChatRequest {
   conversation_id: string | null;
   message: string;
@@ -16,24 +13,9 @@ interface ChatResponse {
   message: ChatMessage[];
 }
 
-// In-memory storage for conversations (in production, use a database)
-const conversations = new Map<string, ChatMessage[]>();
-
 // Function to generate a simple conversation ID
 function generateConversationId(): string {
   return `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
-
-// Function to simulate bot response (replace with actual AI/bot logic)
-function generateBotResponse(userMessage: string): string {
-  // Simple echo bot for demonstration
-  const responses = [
-    `I received your message: "${userMessage}"`,
-    `That's interesting! You said: "${userMessage}"`,
-    `Thanks for sharing: "${userMessage}"`,
-    `I understand you're saying: "${userMessage}"`,
-  ];
-  return responses[Math.floor(Math.random() * responses.length)];
 }
 
 export async function POST(request: NextRequest) {
@@ -52,32 +34,22 @@ export async function POST(request: NextRequest) {
     let conversationId = body.conversation_id;
     if (!conversationId) {
       conversationId = generateConversationId();
-      conversations.set(conversationId, []);
     }
 
-    // Get existing conversation or create new one
-    const conversationHistory = conversations.get(conversationId) || [];
+    const db = getDatabase();
+    const ollama = getOllamaService();
 
-    // Add user message
-    const userMessage: ChatMessage = {
-      role: 'user',
-      message: body.message
-    };
-    conversationHistory.push(userMessage);
+    // Add user message to database
+    await db.addMessage(conversationId, 'user', body.message);
 
-    // Generate bot response
-    const botResponseText = generateBotResponse(body.message);
-    const botMessage: ChatMessage = {
-      role: 'bot',
-      message: botResponseText
-    };
-    conversationHistory.push(botMessage);
-
-    // Keep only the 5 most recent messages (as specified in requirements)
-    const recentMessages = conversationHistory.slice(-5);
+    // Generate bot response using Ollama
+    const botResponseText = await ollama.generateResponse(body.message);
     
-    // Update conversation storage
-    conversations.set(conversationId, conversationHistory);
+    // Add bot message to database
+    await db.addMessage(conversationId, 'bot', botResponseText);
+
+    // Get the 5 most recent messages for response
+    const recentMessages = await db.getRecentMessages(conversationId, 5);
 
     // Prepare response
     const response: ChatResponse = {
@@ -98,36 +70,38 @@ export async function POST(request: NextRequest) {
 
 // GET method to retrieve conversation history or all conversations
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const conversationId = searchParams.get('conversation_id');
+  try {
+    const { searchParams } = new URL(request.url);
+    const conversationId = searchParams.get('conversation_id');
+    const db = getDatabase();
 
-  // If no conversation_id provided, return all conversation IDs
-  if (!conversationId) {
-    const allConversations = Array.from(conversations.entries()).map(([id, messages]) => ({
-      conversation_id: id,
-      message: messages.slice(-5) // return only the 5 most recent messages
-    }));
+    // If no conversation_id provided, return all conversation IDs
+    if (!conversationId) {
+      const allConversations = await db.getAllConversations();
+      return NextResponse.json(allConversations);
+    }
 
-    return NextResponse.json(allConversations);
-  }
+    // Return specific conversation
+    const recentMessages = await db.getRecentMessages(conversationId, 5);
+    
+    if (recentMessages.length === 0) {
+      return NextResponse.json(
+        { error: 'Conversation not found' },
+        { status: 404 }
+      );
+    }
 
-  // Return specific conversation
-  const conversationHistory = conversations.get(conversationId);
-  
-  if (!conversationHistory) {
+    const response: ChatResponse = {
+      conversation_id: conversationId,
+      message: recentMessages
+    };
+
+    return NextResponse.json(response);
+  } catch (error) {
+    console.error('Chat API GET error:', error);
     return NextResponse.json(
-      { error: 'Conversation not found' },
-      { status: 404 }
+      { error: 'Internal server error' },
+      { status: 500 }
     );
   }
-
-  // Return the 5 most recent messages
-  const recentMessages = conversationHistory.slice(-5);
-  
-  const response: ChatResponse = {
-    conversation_id: conversationId,
-    message: recentMessages
-  };
-
-  return NextResponse.json(response);
 }
