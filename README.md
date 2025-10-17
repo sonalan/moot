@@ -55,7 +55,8 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 - **Chat API**: RESTful API for sending and receiving messages
 - **Chat Archive**: View all conversations with message history
-- **LLM Integration**: Ollama service with configurable models (default: smol2)
+- **SQLite Database**: Persistent storage for chat history and conversations
+- **Ollama Integration**: Real AI-powered responses using Ollama LLM service
 - **Docker Support**: Full containerization with Docker and Docker Compose
 - **Testing**: Comprehensive test suite with 100% coverage
 - **TypeScript**: Full type safety throughout the application
@@ -71,8 +72,22 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 The application consists of two main services:
 
-1. **moot-app**: The main Next.js chat application
+1. **moot-app**: The main Next.js chat application with SQLite database
 2. **ollama**: LLM service for AI-powered chat responses
+
+### Database
+
+The application uses **SQLite** for persistent storage with the following schema:
+
+- **conversations** table: Stores conversation metadata
+- **messages** table: Stores all chat messages with user/bot roles
+- Database file: `chat.db` (development) or `/app/data/chat.db` (Docker)
+
+Benefits:
+- ✅ Persistent storage across restarts
+- ✅ No separate database server needed
+- ✅ Fast queries with proper indexing
+- ✅ Easy backup (just copy the .db file)
 
 ## Configuration
 
